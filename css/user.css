@@ -1,0 +1,137 @@
+body {
+    width: 100%;
+    height: 100%;
+    font-family: Arial, sans-serif;
+    background-color: #f0f0f0;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    flex-direction: row;
+    overflow: hidden;
+}
+
+.first-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100vh;
+}
+
+.filter {
+    width: 250px;
+    height: 250px;
+    background-color: white;
+    border: 1px solid;
+}
+
+.filter > form {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.top-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 640px;
+    /* padding: 20px; */
+    background-color: #35a7bb;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.container {
+    height: 100%;
+    width: 640px;
+    background-color: #ffffff;
+    overflow: auto;
+    flex: 1;
+}
+.container > table,
+th,
+td {
+    font-size: large;
+    border: 1px solid black;
+    border-collapse: collapse;
+    width: 625px;
+}
+
+.input-container {
+    background-color: #43b1cc;
+    width: 640px;
+}
+.input-container > #inputForm {
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    align-content: center;
+}
+.input-container > #inputForm > #title {
+    width: 350px;
+}
+.input-container > #inputForm > * {
+    height: 20px;
+    margin-left: 5px;
+}
+
+#form-table-data {
+    display: flex;
+    flex-wrap: wrap;
+    max-width: 80px;
+    gap: 5px;
+}
+
+.edit {
+    display: inline-block;
+    padding: 10px 10px;
+    background-color: gray;
+    color: white;
+    text-align: center;
+    text-decoration: none;
+
+    display: inline-block;
+    font-size: 16px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+#sil {
+    display: inline-block;
+    padding: 10px 10px;
+    background-color: goldenrod;
+    color: white;
+    text-align: center;
+    text-decoration: none;
+
+    display: inline-block;
+    font-size: 16px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+#mark {
+    display: inline-block;
+    padding: 10px 10px;
+    background-color: black;
+    color: white;
+    text-align: center;
+    text-decoration: none;
+
+    display: inline-block;
+    font-size: 16px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+h1 {
+    color: #ffffff;
+}
