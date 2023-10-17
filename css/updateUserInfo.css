@@ -47,7 +47,7 @@ body {
     cursor: pointer;
 }
 
-#submit {
+#edit-submit {
     display: inline-block;
     padding: 10px 20px;
     background-color: black;
@@ -60,3 +60,4 @@ body {
     border-radius: 5px;
     cursor: pointer;
 }
+

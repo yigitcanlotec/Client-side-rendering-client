@@ -1,5 +1,5 @@
 const serverURL = 'http://localhost:3000'
-
+mainPage();
 
 // Function to set a cookie
 function setCookie(name, value) {
@@ -40,6 +40,12 @@ function sendLoginRequest() {
     }
 }   
 
+function registerUser(username, password) {
+    axios.post('http://localhost:3000/api/v1/register', {username: username, password: password}).then((result) => {
+
+    }).catch((error) => { console.error(error)});
+}
+
 function domCreateElement(element, options) {
     const createdElement = document.createElement(element);
 
@@ -65,6 +71,200 @@ function domCreateElement(element, options) {
     };
 }
 
+   
+
+
+
+function markTask (token, id, done, assignee) {
+    if (done){
+        axios.post(`http://localhost:3000/api/v1/task/${id}/done`, {id: id, assignee: assignee}, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            } 
+        }).then(() => {
+            filter(token, 'all');
+        }).catch((err) => {
+            console.error(err);
+        });
+    } else {
+        axios.post(`http://localhost:3000/api/v1/task/${id}/undone`, {id: id, assignee: assignee}, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            } 
+        }).then(() => {
+            filter(token, 'all');
+        }).catch((err) => {
+            console.error(err);
+        });
+    }
+   
+}
+
+function deleteAndCreateTableToQueryResult(query) {
+    
+    const queryTable = document.getElementById('table');
+    queryTable.removeChild(document.getElementById('table-body'));
+    domCreateElement('tbody', { id: 'table-body', className: 'table-body' }).appendToLast(
+        'table'
+    );
+
+    const tableBody = document.querySelector('#table tbody');
+   
+        query.data.queryData.forEach(item => {
+        const row = tableBody.insertRow(); // Insert a new row to the table body
+    
+        // Add cells (columns) to the row
+        const cell1 = row.insertCell(); // Create a new cell for column 1
+        const cell2 = row.insertCell();
+        const cell3 = row.insertCell();
+        const cell4 = row.insertCell();
+        const cell5 = row.insertCell();
+      // Create a new cell for column 2
+    
+        // Populate cell data with the corresponding values from the data object
+        cell1.textContent = item.id;
+        cell2.textContent = item.title;
+        cell3.textContent = item.assignee;
+        cell4.textContent = item.done;
+        const deleteButton = document.createElement('input');
+        deleteButton.type = 'button'; 
+        deleteButton.value = 'Sil';
+        deleteButton.id = 'sil';
+        deleteButton.addEventListener('click', () => {
+            deleteTask(item.id, localStorage.getItem('token'), item.assignee);
+        });
+        cell5.appendChild(deleteButton);
+
+        const editButton = document.createElement('input');
+        editButton.type = 'button'; 
+        editButton.value = 'Edit';
+        editButton.id = 'edit';
+        editButton.addEventListener('click', () => {
+            updateTask(item.id, item.title, item.assignee, item.done, localStorage.getItem('token'));
+            
+        });
+        cell5.appendChild(editButton); 
+
+        const markButton = document.createElement('input');
+        markButton.type = 'button'; 
+        markButton.value = `Mark as ${!item.done}`;
+        markButton.id = 'mark';
+        markButton.addEventListener('click', async () => {
+            markTask(localStorage.getItem('token'), item.id, !item.done, item.assignee);
+        });
+        cell5.appendChild(markButton); 
+     
+      });
+}
+
+
+async function filter (token, value) {
+    const query = await axios.get(`http://localhost:3000/api/v1/tasks?filter=${value}`, {
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
+    });
+  
+     deleteAndCreateTableToQueryResult(query);
+}
+
+
+async function addTask(title, done, token){
+    const postData = {
+        title: title, // document.getElementById('title-text').value,
+        done: done // document.getElementById('done-check').checked
+      };
+     console.log(document.getElementById('done-check').checked);
+    
+    axios.post('http://localhost:3000/api/v1/tasks/insert', postData, {
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
+    }).then((query) => {
+        filter(token, document.getElementById('select-done').value);
+    });
+    
+}
+
+async function deleteTask(id, token, assignee){
+
+    await axios.post(`http://localhost:3000/api/v1/task/${id}/delete`, {assignee: assignee}, {
+        headers: {
+            'Authorization': `Bearer ${token}`
+        } 
+    }).then(() => {
+        
+        filter(token, 'all');
+    }).catch((err) => {
+        console.error(err);
+    });
+}
+
+
+async function updateTask(id, title, assignee, done, token){
+    const oldBodyElement = document.body;
+    const parentElement = oldBodyElement.parentElement;
+    parentElement.removeChild(oldBodyElement);
+    const body = document.createElement('body');
+    parentElement.appendChild(body);
+
+    domCreateElement('link', {
+        rel: 'stylesheet',
+        href: '/css/updateUserInfo.css',
+    }).appendToLast('body');
+
+    domCreateElement('div', { className: 'container' }).appendToLast(
+        'body'
+    );
+
+    domCreateElement('div', { className: 'main-container' }).appendToLast(
+        'container'
+    );
+    domCreateElement('div', { className: 'text-container' }).appendToLast(
+        'main-container'
+    );
+    domCreateElement('input', {type: 'text',  id: 'id', value: id }).appendToLast(
+        'text-container'
+    );   
+    domCreateElement('input', {type: 'text',  id: 'title', value: title }).appendToLast(
+        'text-container'
+    );   
+    domCreateElement('input', {type: 'text',  id: 'assignee', value: assignee, disabled: true }).appendToLast(
+        'text-container'
+    );   
+    domCreateElement('select', {className: 'done', id: 'done', name: done }).appendToLast(
+        'text-container'
+    ); 
+    domCreateElement('option', {id: `${done}`, value: done, selected: done, innerText:  done }).appendToLast(
+        'done'
+    );
+    domCreateElement('option', {id: `${!done}`, value: !done, selected: !done, innerText: !done }).appendToLast(
+        'done'
+    );    
+    
+    domCreateElement('div', { className: 'button-container' }).appendToLast(
+        'main-container'
+    );
+    domCreateElement('input', {type: 'button',  id: 'edit-submit', value: 'Edit' }).appendToLast(
+        'button-container'
+    );
+    domCreateElement('input', {type: 'button', id: 'back', value: 'Back'}).appendToLast('button-container');   
+
+    document.getElementById('edit-submit').addEventListener('click', () =>{ 
+        const newTitle = document.getElementById('title').value;
+        const taskCompleted = document.getElementById('done').value;
+        console.log(id, newTitle, taskCompleted);
+         axios.post(`http://localhost:3000/api/v1/task/${id}/update`, {'title': newTitle , 'done': taskCompleted, 'id': id, 'assignee': assignee})
+            .then(() => homePage(token, assignee))
+            .catch((err) => console.error(err));
+    });
+
+    document.getElementById('back').addEventListener('click', () => homePage(token));
+
+   
+}
+
+function mainPage(){
     domCreateElement('link', {
         rel: 'stylesheet',
         href: '/index.css',
@@ -90,6 +290,7 @@ function domCreateElement(element, options) {
         onclick: registerPage,
         innerText: 'Sign Up',
     }).appendToLast('login-button-container');
+}
 
 function loginPage() {
 
@@ -128,7 +329,7 @@ function loginPage() {
         className: 'login-button-container',
     }).appendToLast('elements-container');
     domCreateElement('a', {
-        onclick: homePage, //BURDA DA SORUN VAR!!!!!!!!!!!!!!!!!
+        onclick: homePage, 
         innerText: 'Log In',
     }).appendToLast('login-button-container');
     domCreateElement('a', {
@@ -162,14 +363,12 @@ function loginPage() {
     domCreateElement('button', {
         type: 'submit',
         innerText: 'Sign In',
-        id: "login-button", //sendLoginRequest,
+        id: "login-button",
     }).appendToLast('input-container');
 
     document.getElementById('login-button').addEventListener(('click'), sendLoginRequest );
 
-    domCreateElement('script', {
-        src: 'https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js',
-    }).appendToLast('body');
+    
 }
 
 function registerPage() {
@@ -236,166 +435,19 @@ function registerPage() {
     domCreateElement('button', {
         type: 'submit',
         innerText: 'Register',
-        onclick: '',
+        id: 'submit-button',
     }).appendToLast('input-container');
 
-    domCreateElement('script', {
-        src: 'https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js',
-    }).appendToLast('body');
-}
-
-
-function deleteAndCreateTableToQueryResult(query) {
-    
-    const queryTable = document.getElementById('table');
-    queryTable.removeChild(document.getElementById('table-body'));
-    domCreateElement('tbody', { id: 'table-body', className: 'table-body' }).appendToLast(
-        'table'
-    );
-
-    const tableBody = document.querySelector('#table tbody');
-   
-        query.data.forEach(item => {
-        const row = tableBody.insertRow(); // Insert a new row to the table body
-    
-        // Add cells (columns) to the row
-        const cell1 = row.insertCell(); // Create a new cell for column 1
-        const cell2 = row.insertCell();
-        const cell3 = row.insertCell();
-        const cell4 = row.insertCell();
-        const cell5 = row.insertCell();
-      // Create a new cell for column 2
-    
-        // Populate cell data with the corresponding values from the data object
-        cell1.textContent = item.id;
-        cell2.textContent = item.title;
-        cell3.textContent = item.assignee;
-        cell4.textContent = item.done;
-        const deleteButton = document.createElement('input');
-        deleteButton.type = 'button'; 
-        deleteButton.value = 'Sil';
-        deleteButton.id = 'sil';
-        deleteButton.addEventListener('click', () => {
-            deleteTask(item.id);
-        });
-        cell5.appendChild(deleteButton);
-
-        const editButton = document.createElement('input');
-        editButton.type = 'button'; 
-        editButton.value = 'Edit';
-        editButton.id = 'edit';
-        editButton.addEventListener('click', () => {
-            updateTask(item.id, item.title, item.assignee, item.done);
-            
-        });
-        cell5.appendChild(editButton); 
-
-        const markButton = document.createElement('input');
-        markButton.type = 'button'; 
-        markButton.value = `Mark as ${!item.done}`;
-        markButton.id = 'mark';
-        cell5.appendChild(markButton); 
-     
-      });
-}
-
-
-async function filter (token, value) {
-    const query = await axios.get(`http://localhost:3000/api/v1/tasks?filter=${value}`, {
-        headers: {
-            'Authorization': `Bearer ${token}`
-        }
-    });
-  
-     deleteAndCreateTableToQueryResult(query);
-}
-
-
-async function addTask(title, done, token){
-    const postData = {
-        assignee: 'value',
-        title: title, // document.getElementById('title-text').value,
-        done: done // document.getElementById('done-check').checked
-      };
-     console.log(document.getElementById('done-check').checked);
-    
-    axios.post('http://localhost:3000/api/v1/tasks/insert', postData).then((query) => {
-        filter(token);
-    });
-    
-}
-
-async function deleteTask(id){
-
-    await axios.delete(`http://localhost:3000/api/v1/task/${id}/delete`).then(() => {
-        console.log(`${id} deleted`);
-        filter();
-    }).catch((err) => {
-        console.error(err);
-    });
-}
-
-
-async function updateTask(id, title, assignee, done){
-    const oldBodyElement = document.body;
-    const parentElement = oldBodyElement.parentElement;
-    parentElement.removeChild(oldBodyElement);
-    const body = document.createElement('body');
-    parentElement.appendChild(body);
-
-    domCreateElement('link', {
-        rel: 'stylesheet',
-        href: '/css/updateUserInfo.css',
-    }).appendToLast('body');
-
-    domCreateElement('div', { className: 'container' }).appendToLast(
-        'body'
-    );
-
-    domCreateElement('div', { className: 'main-container' }).appendToLast(
-        'container'
-    );
-    domCreateElement('div', { className: 'text-container' }).appendToLast(
-        'main-container'
-    );
-    domCreateElement('input', {type: 'text',  id: 'id', value: id }).appendToLast(
-        'text-container'
-    );   
-    domCreateElement('input', {type: 'text',  id: 'title', value: title }).appendToLast(
-        'text-container'
-    );   
-    domCreateElement('input', {type: 'text',  id: 'assignee', value: assignee }).appendToLast(
-        'text-container'
-    );   
-    domCreateElement('select', {className: 'done', id: 'done', name: done }).appendToLast(
-        'text-container'
-    ); 
-    domCreateElement('option', {id: `${done}`, value: done, selected: done, innerText:  done }).appendToLast(
-        'done'
-    );
-    domCreateElement('option', {id: `${!done}`, value: !done, selected: !done, innerText: !done }).appendToLast(
-        'done'
-    );    
-    
-    domCreateElement('div', { className: 'button-container' }).appendToLast(
-        'main-container'
-    );
-    domCreateElement('input', {type: 'button',  id: 'submit', value: 'Edit' }).appendToLast(
-        'button-container'
-    );
-    domCreateElement('input', {type: 'button', id: 'back', value: 'Back'}).appendToLast('button-container');   
-
-    document.getElementById('submit').addEventListener('click', () =>{ 
-        const newTitle = document.getElementById('title').value;
-        const taskCompleted = document.getElementById('done').value;
-         axios.post(`http://localhost:3000/api/v1/task/${id}/update`, {'title': newTitle , 'done': taskCompleted})
-            .then(() => homePage())
-            .catch((err) => console.error(err));
+    document.getElementById('submit-button').addEventListener('click', () =>{ 
+        const username = document.getElementById('login-username').value;
+        const password = document.getElementById('login-password').value;    
+        registerUser(username, password);
+        console.log('Register fired');
     });
 
-    document.getElementById('back').addEventListener('click', () => homePage());
 
-   
+
+
 }
 
 async function homePage(token) {
@@ -418,6 +470,39 @@ async function homePage(token) {
         rel: 'stylesheet',
         href: '/css/home.css',
     }).appendToLast('body');
+
+
+    const tableData = await axios.get('http://localhost:3000/api/v1/tasks/',   {
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      const userCredentials = await axios.get('http://localhost:3000/api/v1/userInfo/',   {
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
+      });
+
+    domCreateElement('div', { className: 'nav-bar' }).appendToLast(
+        'body'
+    );
+    domCreateElement('input', {type: 'button', id: 'profile', value: tableData.data.username }).appendToLast('nav-bar');
+    domCreateElement('input', {type: 'button', id: 'logout', value:'Log out'}).appendToLast('nav-bar');
+
+    document.getElementById('logout').addEventListener('click', ()=>{
+       localStorage.removeItem('token');
+       const oldBodyElement = document.body;
+       const parentElement = oldBodyElement.parentElement;
+       parentElement.removeChild(oldBodyElement);
+       const body = document.createElement('body');
+       parentElement.appendChild(body);
+       return mainPage();
+    }); 
+
+    document.getElementById('profile').addEventListener('click', ()=>{
+        return profilePage(userCredentials);
+    });
 
     domCreateElement('div', { className: 'first-container' }).appendToLast(
         'body'
@@ -459,11 +544,7 @@ async function homePage(token) {
     domCreateElement('tbody', { id: 'table-body', className: 'table-body' }).appendToLast(
         'table'
     );
-    const tableData = await axios.get('http://localhost:3000/api/v1/tasks/',   {
-        headers: {
-            'Authorization': `Bearer ${token}`
-        }
-      });
+    
     
     deleteAndCreateTableToQueryResult(tableData);
 
@@ -492,7 +573,30 @@ async function homePage(token) {
     document.getElementById('filter-button').addEventListener('click', ()=>{
         filter(token, document.getElementById('select-done').value);
     }); 
-
- 
     
+}
+
+
+function profilePage(credentials) {
+    const oldBodyElement = document.body;
+    const parentElement = oldBodyElement.parentElement;
+    parentElement.removeChild(oldBodyElement);
+    const body = document.createElement('body');
+    parentElement.appendChild(body);
+    
+    domCreateElement('link', {
+        rel: 'stylesheet',
+        href: '/css/profile.css',
+    }).appendToLast('body');
+    domCreateElement('div', {className: 'container'}).appendToLast('body');
+
+    domCreateElement('input', {type: 'text', id: 'username', value: credentials.data[0] }).appendToLast('container');
+    domCreateElement('input', {type: 'password', id: 'password', value: credentials.data[1] }).appendToLast('container');
+    domCreateElement('div', {className: 'button-container'}).appendToLast('container');
+    domCreateElement('input', {type: 'button', id: 'edit', value:'Edit'}).appendToLast('button-container');
+    domCreateElement('input', {type: 'button', id: 'back', value:'Geri'}).appendToLast('button-container');
+
+    document.getElementById('back').addEventListener('click', ()=>{
+        homePage(localStorage.getItem('token'));
+    }); 
 }
