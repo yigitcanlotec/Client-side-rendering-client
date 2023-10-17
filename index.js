@@ -268,23 +268,30 @@ function deleteAndCreateTableToQueryResult(query) {
         cell2.textContent = item.title;
         cell3.textContent = item.assignee;
         cell4.textContent = item.done;
-        const button = document.createElement('input');
-        button.type = 'button'; 
-        button.value = 'Sil';
-        button.id = 'sil';
-        cell5.appendChild( button);
+        const deleteButton = document.createElement('input');
+        deleteButton.type = 'button'; 
+        deleteButton.value = 'Sil';
+        deleteButton.id = 'sil';
+        deleteButton.addEventListener('click', () => {
+            deleteTask(item.id);
+        });
+        cell5.appendChild(deleteButton);
 
-        const button2 = document.createElement('input');
-        button2.type = 'button'; 
-        button2.value = 'Edit';
-        button2.id = 'edit';
-        cell5.appendChild(button2); 
+        const editButton = document.createElement('input');
+        editButton.type = 'button'; 
+        editButton.value = 'Edit';
+        editButton.id = 'edit';
+        editButton.addEventListener('click', () => {
+            updateTask(item.id, item.title, item.assignee, item.done);
+            
+        });
+        cell5.appendChild(editButton); 
 
-        const button3 = document.createElement('input');
-        button3.type = 'button'; 
-        button3.value = `Mark as ${!item.done}`;
-        button3.id = 'mark';
-        cell5.appendChild(button3); 
+        const markButton = document.createElement('input');
+        markButton.type = 'button'; 
+        markButton.value = `Mark as ${!item.done}`;
+        markButton.id = 'mark';
+        cell5.appendChild(markButton); 
      
       });
 }
@@ -297,20 +304,92 @@ async function filter () {
 }
 
 
-async function addTask(){
+async function addTask(title, done){
     const postData = {
         assignee: 'value',
-        title: document.getElementById('title-text').value,
-        done: document.getElementById('done-check').checked
+        title: title, // document.getElementById('title-text').value,
+        done: done // document.getElementById('done-check').checked
       };
      console.log(document.getElementById('done-check').checked);
     
-    axios.post('http://localhost:3000/api/v1/task/insert', postData).then((query) => {
+    axios.post('http://localhost:3000/api/v1/tasks/insert', postData).then((query) => {
         filter();
     });
     
 }
 
+async function deleteTask(id){
+
+    await axios.delete(`http://localhost:3000/api/v1/task/${id}/delete`).then(() => {
+        console.log(`${id} deleted`);
+        filter();
+    }).catch((err) => {
+        console.error(err);
+    });
+}
+
+
+async function updateTask(id, title, assignee, done){
+    const oldBodyElement = document.body;
+    const parentElement = oldBodyElement.parentElement;
+    parentElement.removeChild(oldBodyElement);
+    const body = document.createElement('body');
+    parentElement.appendChild(body);
+
+    domCreateElement('link', {
+        rel: 'stylesheet',
+        href: '/css/updateUserInfo.css',
+    }).appendToLast('body');
+
+    domCreateElement('div', { className: 'container' }).appendToLast(
+        'body'
+    );
+
+    domCreateElement('div', { className: 'main-container' }).appendToLast(
+        'container'
+    );
+    domCreateElement('div', { className: 'text-container' }).appendToLast(
+        'main-container'
+    );
+    domCreateElement('input', {type: 'text',  id: 'id', value: id }).appendToLast(
+        'text-container'
+    );   
+    domCreateElement('input', {type: 'text',  id: 'title', value: title }).appendToLast(
+        'text-container'
+    );   
+    domCreateElement('input', {type: 'text',  id: 'assignee', value: assignee }).appendToLast(
+        'text-container'
+    );   
+    domCreateElement('select', {className: 'done', id: 'done', name: done }).appendToLast(
+        'text-container'
+    ); 
+    domCreateElement('option', {id: `${done}`, value: done, selected: done, innerText:  done }).appendToLast(
+        'done'
+    );
+    domCreateElement('option', {id: `${!done}`, value: !done, selected: !done, innerText: !done }).appendToLast(
+        'done'
+    );    
+    
+    domCreateElement('div', { className: 'button-container' }).appendToLast(
+        'main-container'
+    );
+    domCreateElement('input', {type: 'button',  id: 'submit', value: 'Edit' }).appendToLast(
+        'button-container'
+    );
+    domCreateElement('input', {type: 'button', id: 'back', value: 'Back'}).appendToLast('button-container');   
+
+    document.getElementById('submit').addEventListener('click', () =>{ 
+        const newTitle = document.getElementById('title').value;
+        const taskCompleted = document.getElementById('done').value;
+         axios.post(`http://localhost:3000/api/v1/task/${id}/update`, {'title': newTitle , 'done': taskCompleted})
+            .then(() => homePage())
+            .catch((err) => console.error(err));
+    });
+
+    document.getElementById('back').addEventListener('click', () => homePage());
+
+   
+}
 
 async function homePage() {
 
@@ -380,8 +459,8 @@ async function homePage() {
     domCreateElement('div', {className: 'inputForm', id: 'inputForm'}).appendToLast('input-container');
     domCreateElement('input', {type: 'checkbox', id: 'done-check', name:'done'}).appendToLast('inputForm');
     domCreateElement('input', {type: 'text', id: 'title-text', name:'title'}).appendToLast('inputForm');
-    domCreateElement('input', {type: 'submit', id: 'submit', value:'Submit', onclick: addTask}).appendToLast('inputForm');
-    
+    domCreateElement('input', {type: 'button', id: 'submit', value:'Submit'}).appendToLast('inputForm');
+    document.getElementById('submit').addEventListener('click', () => addTask(document.getElementById('title-text').value, document.getElementById('done-check').checked ));
 
     domCreateElement('div', {className: 'second-container'}).appendToLast('body');
     domCreateElement('div', {className: 'filter'}).appendToLast('second-container');
