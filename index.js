@@ -1,3 +1,6 @@
+const serverURL = 'http://localhost:3000'
+
+
 // Function to set a cookie
 function setCookie(name, value) {
     // const expirationDate = new Date();
@@ -10,41 +13,32 @@ function setCookie(name, value) {
     document.cookie = cookieString;
 }
 
-function sendLoginRequest(e) {
-    e.preventDefault();
-    const username = document.getElementById('login-username').value;
+function sendLoginRequest() {
+    
+    
+  
+    if (localStorage.getItem('token')){
+        homePage(localStorage.getItem('token'));
+    } else {
+        const username = document.getElementById('login-username').value;
     const password = document.getElementById('login-password').value;
-
-    const postData = {
-        username: username,
-        password: password,
-    };
-
     
-   
+    // Create a Base64 encoded string of the form "username:password"
+    const base64Credentials = btoa(`${username}:${password}`);
     
-    axios
-        .post('http://localhost:3000/', postData, {
-            withCredentials: true, // Include credentials in the request
-        })
-        .then((response) => {
-            token = response.data.token; // Extract token from the response
-            const headers = {
-                Authorization: `Bearer ${token}`,
-            };
-            console.log(response.data); // This will log the response from '/redirect'
-        })
-        .then((response) => {
-           
-            console.log(token);
-            // return axios.get(`http://localhost:3000/?token=${token}`);
-            // window.location.href = `http://localhost:3000/?token=${token}`;
-            window.location.href = 'http://localhost:3000';
-        })
-        .catch((error) => {
-            console.error(error);
-        });
-}
+    axios.get('http://localhost:3000/api/v1/login',  {
+        headers: {
+          'Authorization': `Basic ${base64Credentials}`
+        }
+      }).then((token) => {
+        // If request is successful, then server sends the token.
+        localStorage.setItem('token', token.data);
+        homePage(token.data);
+        // console
+      }).catch((error) => console.error(error));
+
+    }
+}   
 
 function domCreateElement(element, options) {
     const createdElement = document.createElement(element);
@@ -98,6 +92,11 @@ function domCreateElement(element, options) {
     }).appendToLast('login-button-container');
 
 function loginPage() {
+
+    if (localStorage.getItem('token')){
+        return homePage(localStorage.getItem('token'));  
+    }
+
     // Get a reference to the body element
     const oldBodyElement = document.body;
 
@@ -129,7 +128,7 @@ function loginPage() {
         className: 'login-button-container',
     }).appendToLast('elements-container');
     domCreateElement('a', {
-        onclick: homePage,
+        onclick: homePage, //BURDA DA SORUN VAR!!!!!!!!!!!!!!!!!
         innerText: 'Log In',
     }).appendToLast('login-button-container');
     domCreateElement('a', {
@@ -158,11 +157,15 @@ function loginPage() {
         id: 'login-password',
         placeholder: 'Password',
     }).appendToLast('text-container');
+
+
     domCreateElement('button', {
         type: 'submit',
         innerText: 'Sign In',
-        onclick: homePage, //sendLoginRequest,
+        id: "login-button", //sendLoginRequest,
     }).appendToLast('input-container');
+
+    document.getElementById('login-button').addEventListener(('click'), sendLoginRequest );
 
     domCreateElement('script', {
         src: 'https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js',
@@ -297,14 +300,18 @@ function deleteAndCreateTableToQueryResult(query) {
 }
 
 
-async function filter () {
-    const query = await axios.get(`http://localhost:3000/api/v1/tasks?filter=${document.getElementById('select-done').value}`);
+async function filter (token, value) {
+    const query = await axios.get(`http://localhost:3000/api/v1/tasks?filter=${value}`, {
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
+    });
   
-    deleteAndCreateTableToQueryResult(query);
+     deleteAndCreateTableToQueryResult(query);
 }
 
 
-async function addTask(title, done){
+async function addTask(title, done, token){
     const postData = {
         assignee: 'value',
         title: title, // document.getElementById('title-text').value,
@@ -313,7 +320,7 @@ async function addTask(title, done){
      console.log(document.getElementById('done-check').checked);
     
     axios.post('http://localhost:3000/api/v1/tasks/insert', postData).then((query) => {
-        filter();
+        filter(token);
     });
     
 }
@@ -391,9 +398,9 @@ async function updateTask(id, title, assignee, done){
    
 }
 
-async function homePage() {
-
-    const tableData = await axios.get('http://localhost:3000/api/v1/tasks/');
+async function homePage(token) {
+   
+    
     // console.log(tableData);
     // Get a reference to the body element
     const oldBodyElement = document.body;
@@ -452,7 +459,12 @@ async function homePage() {
     domCreateElement('tbody', { id: 'table-body', className: 'table-body' }).appendToLast(
         'table'
     );
-   
+    const tableData = await axios.get('http://localhost:3000/api/v1/tasks/',   {
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
+      });
+    
     deleteAndCreateTableToQueryResult(tableData);
 
     domCreateElement('div', {className: 'input-container'}).appendToLast('first-container');
@@ -460,7 +472,7 @@ async function homePage() {
     domCreateElement('input', {type: 'checkbox', id: 'done-check', name:'done'}).appendToLast('inputForm');
     domCreateElement('input', {type: 'text', id: 'title-text', name:'title'}).appendToLast('inputForm');
     domCreateElement('input', {type: 'button', id: 'submit', value:'Submit'}).appendToLast('inputForm');
-    document.getElementById('submit').addEventListener('click', () => addTask(document.getElementById('title-text').value, document.getElementById('done-check').checked ));
+    document.getElementById('submit').addEventListener('click', () => addTask(document.getElementById('title-text').value, document.getElementById('done-check').checked, token ));
 
     domCreateElement('div', {className: 'second-container'}).appendToLast('body');
     domCreateElement('div', {className: 'filter'}).appendToLast('second-container');
@@ -469,8 +481,18 @@ async function homePage() {
     domCreateElement('option', {value: 'all', selected: true, textContent: 'All'}).appendToLast('select-done');
     domCreateElement('option', {value: 'true', textContent: 'true'}).appendToLast('select-done');
     domCreateElement('option', {value: 'false', textContent: 'false'}).appendToLast('select-done');
-    domCreateElement('input', {type: 'submit', name: 'filter', id: 'filter', value: 'filter', onclick: filter}).appendToLast('form');
-    
+    const formContainer = document.getElementsByClassName('form')[0];
+
+    const filterButton = document.createElement('button');
+    filterButton.value = 'Filter'
+    filterButton.id = 'filter-button'
+    filterButton.innerText = 'filter'
+    formContainer.appendChild(filterButton);
+
+    document.getElementById('filter-button').addEventListener('click', ()=>{
+        filter(token, document.getElementById('select-done').value);
+    }); 
+
  
     
 }
