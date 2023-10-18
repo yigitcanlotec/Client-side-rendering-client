@@ -1,17 +1,6 @@
 const serverURL = 'http://localhost:3000'
 mainPage();
 
-// Function to set a cookie
-function setCookie(name, value) {
-    // const expirationDate = new Date();
-    // expirationDate.setDate(expirationDate.getDate() + daysToExpire);
-
-    // Format the cookie string
-    // const cookieString = `${name}=${value}; expires=${expirationDate.toUTCString()}; path=/`;
-    const cookieString = `${name}=${value}; path=/`;
-    // Set the cookie
-    document.cookie = cookieString;
-}
 
 function sendLoginRequest() {
     
@@ -26,7 +15,7 @@ function sendLoginRequest() {
     // Create a Base64 encoded string of the form "username:password"
     const base64Credentials = btoa(`${username}:${password}`);
     
-    axios.get('http://localhost:3000/api/v1/login',  {
+    axios.get(serverURL + '/api/v1/login',  {
         headers: {
           'Authorization': `Basic ${base64Credentials}`
         }
@@ -41,7 +30,7 @@ function sendLoginRequest() {
 }   
 
 function registerUser(username, password) {
-    axios.post('http://localhost:3000/api/v1/register', {username: username, password: password}).then((result) => {
+    axios.post(serverURL + '/api/v1/register', {username: username, password: password}).then((result) => {
 
     }).catch((error) => { console.error(error)});
 }
@@ -72,12 +61,9 @@ function domCreateElement(element, options) {
 }
 
    
-
-
-
 function markTask (token, id, done, assignee) {
     if (done){
-        axios.post(`http://localhost:3000/api/v1/task/${id}/done`, {id: id, assignee: assignee}, {
+        axios.post(serverURL+ `api/v1/task/${id}/done`, {id: id, assignee: assignee}, {
             headers: {
                 'Authorization': `Bearer ${token}`
             } 
@@ -87,7 +73,7 @@ function markTask (token, id, done, assignee) {
             console.error(err);
         });
     } else {
-        axios.post(`http://localhost:3000/api/v1/task/${id}/undone`, {id: id, assignee: assignee}, {
+        axios.post(serverURL + `/api/v1/task/${id}/undone`, {id: id, assignee: assignee}, {
             headers: {
                 'Authorization': `Bearer ${token}`
             } 
@@ -100,6 +86,54 @@ function markTask (token, id, done, assignee) {
    
 }
 
+
+async function downloadFileFromS3(bucketName, fileKey) {
+    const REGION = 'YOUR_AWS_REGION'; // Replace with your AWS region
+    const API_ENDPOINT = 'YOUR_API_ENDPOINT'; // Replace with your API endpoint that generates pre-signed URLs
+  
+    // Make a request to your server or API to generate a pre-signed URL for the file
+    const response = await fetch(`${API_ENDPOINT}/get-presigned-url?bucketName=${bucketName}&fileKey=${fileKey}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+  
+    if (response.ok) {
+      const { presignedUrl } = await response.json();
+  
+      // Use the pre-signed URL to download the file
+      const downloadLink = document.createElement('a');
+      downloadLink.href = presignedUrl;
+      downloadLink.download = fileKey.split('/').pop(); // Set the downloaded file name
+      downloadLink.click();
+    } else {
+      console.error('Error generating pre-signed URL:', response.statusText);
+    }
+  }
+  
+
+
+async function downloadFile(id, user) {
+    const presignedUrl = await axios.get(serverURL + `/api/v1/${user}/tasks/get/image/${id}`);
+    console.log(presignedUrl);
+
+    // return fetch(presignedUrl)
+    // .then(response => response.blob())
+    // .then(blob => {
+    //   const url = window.URL.createObjectURL(blob);
+    //   const a = document.createElement('a');
+    //   a.href = url;
+    //   a.download = file.split('/').pop(); // Set the downloaded file name
+    //   return a;
+    // })
+    // .catch(error => {
+    //   console.error('Error creating download link:', error);
+    //   return null;
+    // });
+  }
+
+
 function deleteAndCreateTableToQueryResult(query) {
     
     const queryTable = document.getElementById('table');
@@ -110,20 +144,24 @@ function deleteAndCreateTableToQueryResult(query) {
 
     const tableBody = document.querySelector('#table tbody');
    
-        query.data.queryData.forEach(item => {
-        const row = tableBody.insertRow(); // Insert a new row to the table body
-    
-        // Add cells (columns) to the row
-        const cell1 = row.insertCell(); // Create a new cell for column 1
+        query.data.queryData.forEach(async item => {
+        const row = tableBody.insertRow(); 
+       
+      
+        const cell1 = row.insertCell(); 
         const cell2 = row.insertCell();
         const cell3 = row.insertCell();
         const cell4 = row.insertCell();
         const cell5 = row.insertCell();
-      // Create a new cell for column 2
-    
-        // Populate cell data with the corresponding values from the data object
+        axios.get(serverURL + `/api/v1/${item.assignee}/tasks/get/image/${item.id}`).then((fileKeys) => {
+            console.log(fileKeys);
+        })    
+        // fileKeys.forEach(fileKey => {
+        //     downloadFileFromS3(bucketName, fileKey);
+        //   });
         cell1.textContent = item.id;
         cell2.textContent = item.title;
+            
         cell3.textContent = item.assignee;
         cell4.textContent = item.done;
         const deleteButton = document.createElement('input');
@@ -159,7 +197,7 @@ function deleteAndCreateTableToQueryResult(query) {
 
 
 async function filter (token, value) {
-    const query = await axios.get(`http://localhost:3000/api/v1/tasks?filter=${value}`, {
+    const query = await axios.get(serverURL + `/api/v1/tasks?filter=${value}`, {
         headers: {
             'Authorization': `Bearer ${token}`
         }
@@ -169,14 +207,63 @@ async function filter (token, value) {
 }
 
 
-async function addTask(title, done, token){
-    const postData = {
-        title: title, // document.getElementById('title-text').value,
-        done: done // document.getElementById('done-check').checked
-      };
-     console.log(document.getElementById('done-check').checked);
+
+async function handleFileSelect(token, id, username) {
+    const files = document.getElementById('file-input').files; // Get the selected files from the input element
+    for (const file of files){
+        console.log(file);
+        const postData = {
+            fileName: username + '/' + id + '/' + file.name,
+            id: id,
+            userName: username
+          };
+          
+        await axios.post(serverURL + '/api/v1/tasks/insert/image', postData, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        }).then(async (result)=>{
+            const presignedUrl = result.data;
+            console.log(presignedUrl);
+            try {
+                const response = await axios.put(presignedUrl, file, {
+                  headers: {
+                    'Content-Type': file.type,
+                  },
+                });
+            
+                if (response.status === 200) {
+                  console.log('Object uploaded successfully.');
+                } else {
+                  console.error('Error uploading object:', response.statusText);
+                }
+              } catch (error) {
+                console.error('Error uploading object:', error);
+              }
+
+        }).catch((error)=>console.log(error));
+    }
     
-    axios.post('http://localhost:3000/api/v1/tasks/insert', postData, {
+
+
+  }
+
+function generateUUID() {
+    const array = new Uint32Array(1);
+    window.crypto.getRandomValues(array);
+    return array[0];
+}
+
+
+async function addTask(id, title, done, token){
+    const postData = {
+        id: id,
+        title: title,
+        done: done
+      };
+
+    
+    axios.post(serverURL + '/api/v1/tasks/insert', postData, {
         headers: {
             'Authorization': `Bearer ${token}`
         }
@@ -188,7 +275,7 @@ async function addTask(title, done, token){
 
 async function deleteTask(id, token, assignee){
 
-    await axios.post(`http://localhost:3000/api/v1/task/${id}/delete`, {assignee: assignee}, {
+    await axios.post(serverURL + `/api/v1/task/${id}/delete`, {assignee: assignee}, {
         headers: {
             'Authorization': `Bearer ${token}`
         } 
@@ -254,7 +341,7 @@ async function updateTask(id, title, assignee, done, token){
         const newTitle = document.getElementById('title').value;
         const taskCompleted = document.getElementById('done').value;
         console.log(id, newTitle, taskCompleted);
-         axios.post(`http://localhost:3000/api/v1/task/${id}/update`, {'title': newTitle , 'done': taskCompleted, 'id': id, 'assignee': assignee})
+         axios.post(serverURL + `/api/v1/task/${id}/update`, {'title': newTitle , 'done': taskCompleted, 'id': id, 'assignee': assignee})
             .then(() => homePage(token, assignee))
             .catch((err) => console.error(err));
     });
@@ -441,14 +528,14 @@ function registerPage() {
     document.getElementById('submit-button').addEventListener('click', () =>{ 
         const username = document.getElementById('login-username').value;
         const password = document.getElementById('login-password').value;    
+  
         registerUser(username, password);
-        console.log('Register fired');
+        
     });
-
-
-
-
 }
+
+
+
 
 async function homePage(token) {
    
@@ -471,14 +558,17 @@ async function homePage(token) {
         href: '/css/home.css',
     }).appendToLast('body');
 
+    domCreateElement('script', {
+        src: 'https://sdk.amazonaws.com/js/aws-sdk-2.1475.0.min.js'
+    }).appendToLast('body');
 
-    const tableData = await axios.get('http://localhost:3000/api/v1/tasks/',   {
+    const tableData = await axios.get(serverURL + '/api/v1/tasks/',   {
         headers: {
             'Authorization': `Bearer ${token}`
         }
       });
       
-      const userCredentials = await axios.get('http://localhost:3000/api/v1/userInfo/',   {
+      const userCredentials = await axios.get(serverURL + '/api/v1/userInfo/',   {
         headers: {
             'Authorization': `Bearer ${token}`
         }
@@ -550,10 +640,16 @@ async function homePage(token) {
 
     domCreateElement('div', {className: 'input-container'}).appendToLast('first-container');
     domCreateElement('div', {className: 'inputForm', id: 'inputForm'}).appendToLast('input-container');
+    domCreateElement('input', {type: 'file', id: 'file-input', accept: 'image/png, image/jpeg', multiple: true}).appendToLast('inputForm');
     domCreateElement('input', {type: 'checkbox', id: 'done-check', name:'done'}).appendToLast('inputForm');
     domCreateElement('input', {type: 'text', id: 'title-text', name:'title'}).appendToLast('inputForm');
-    domCreateElement('input', {type: 'button', id: 'submit', value:'Submit'}).appendToLast('inputForm');
-    document.getElementById('submit').addEventListener('click', () => addTask(document.getElementById('title-text').value, document.getElementById('done-check').checked, token ));
+    domCreateElement('input', {type: 'button', id: 'insert-task', value:'Add Task'}).appendToLast('inputForm');
+    document.getElementById('insert-task').addEventListener('click', () => {
+        const userId = generateUUID();
+        addTask(userId, document.getElementById('title-text').value, document.getElementById('done-check').checked, token );
+        const fileInput = document.getElementById('file-input');
+        if (fileInput.files.length) handleFileSelect(token, userId, userCredentials.data[0] );
+    });
 
     domCreateElement('div', {className: 'second-container'}).appendToLast('body');
     domCreateElement('div', {className: 'filter'}).appendToLast('second-container');
