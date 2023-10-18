@@ -14,13 +14,13 @@ async function homePage(token) {
         src: 'https://sdk.amazonaws.com/js/aws-sdk-2.1475.0.min.js'
     }).appendToLast('body');
 
-    const tableData = await axios.get(serverURL + '/api/v1/tasks/', {
+    const tableData = await axios.get(serverURL + '/api/tasks/', {
         headers: {
             'Authorization': `Bearer ${token}`
         }
     });
 
-    const userCredentials = await axios.get(serverURL + '/api/v1/userInfo/', {
+    const userCredentials = await axios.get(serverURL + '/api/userInfo/', {
         headers: {
             'Authorization': `Bearer ${token}`
         }

@@ -13,7 +13,7 @@ async function addTask(id, title, done, token) {
     };
 
 
-    axios.post(serverURL + '/api/v1/tasks/insert', postData, {
+    axios.post(serverURL + '/api/task/insert', postData, {
         headers: {
             'Authorization': `Bearer ${token}`
         }
@@ -24,7 +24,7 @@ async function addTask(id, title, done, token) {
 }
 
 async function deleteTask(id, token, assignee) {
-    await axios.post(serverURL + `/api/v1/task/${id}/delete`, { assignee: assignee }, {
+    await axios.post(serverURL + `/api/task/${id}/delete`, { assignee: assignee }, {
         headers: {
             'Authorization': `Bearer ${token}`
         }
@@ -38,7 +38,7 @@ async function deleteTask(id, token, assignee) {
 
 function markAsDoneOrUndoneTask(token, id, done, assignee) {
     if (done) {
-        axios.post(serverURL + `api/v1/task/${id}/done`, { id: id, assignee: assignee }, {
+        axios.post(serverURL + `api/task/${id}/done`, { id: id, assignee: assignee }, {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
@@ -48,7 +48,7 @@ function markAsDoneOrUndoneTask(token, id, done, assignee) {
             console.error(err);
         });
     } else {
-        axios.post(serverURL + `/api/v1/task/${id}/undone`, { id: id, assignee: assignee }, {
+        axios.post(serverURL + `/api/task/${id}/undone`, { id: id, assignee: assignee }, {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
@@ -61,11 +61,6 @@ function markAsDoneOrUndoneTask(token, id, done, assignee) {
 
 }
 
-async function downloadFile(id, user) {
-    const presignedUrl = await axios.get(serverURL + `/api/v1/${user}/tasks/get/image/`);
-    // console.log(presignedUrl);
-}
-
 function sendLoginRequest() {
     if (localStorage.getItem('token')) {
         homePage(localStorage.getItem('token'));
@@ -73,7 +68,7 @@ function sendLoginRequest() {
         const username = document.getElementById('login-username').value;
         const password = document.getElementById('login-password').value;
         const base64Credentials = btoa(`${username}:${password}`);
-        axios.get(serverURL + '/api/v1/login', {
+        axios.get(serverURL + '/api/login', {
             headers: {
                 'Authorization': `Basic ${base64Credentials}`
             }
@@ -85,17 +80,14 @@ function sendLoginRequest() {
     }
 }
 
-
-
 async function filterTasks(token, value) {
-    const query = await axios.get(serverURL + `/api/v1/tasks?filter=${value}`, {
+    const query = await axios.get(serverURL + `/api/tasks?filter=${value}`, {
         headers: {
             'Authorization': `Bearer ${token}`
         }
     });
     deleteAndCreateTableToQueryResult(query);
 }
-
 
 async function handleFileSelect(token, id, username) {
     const files = document.getElementById('file-input').files;
@@ -106,7 +98,7 @@ async function handleFileSelect(token, id, username) {
             userName: username
         };
 
-        await axios.post(serverURL + '/api/v1/tasks/insert/image', postData, {
+        await axios.post(serverURL + '/api/task/insert/image', postData, {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
@@ -133,10 +125,8 @@ async function handleFileSelect(token, id, username) {
     }
 }
 
-
-
 async function getImages(userCredentials, token) {
-    const result = await axios.get(serverURL + `/api/v1/${userCredentials.data[0]}/tasks/image/`, {
+    const result = await axios.get(serverURL + `/api/${userCredentials.data[0]}/tasks/image`, {
         headers: {
             'Authorization': `Bearer ${token}`
         }

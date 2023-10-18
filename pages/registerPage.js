@@ -1,5 +1,5 @@
 function registerUser(username, password) {
-    axios.post(serverURL + '/api/v1/register', { username: username, password: password }).then((result) => {
+    axios.post(serverURL + '/api/register', { username: username, password: password }).then((result) => {
 
     }).catch((error) => { console.error(error) });
 }

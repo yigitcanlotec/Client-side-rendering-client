@@ -51,7 +51,7 @@ async function updateTaskPage(id, title, assignee, done, token) {
         const newTitle = document.getElementById('title').value;
         const taskCompleted = document.getElementById('done').value;
         console.log(id, newTitle, taskCompleted);
-        axios.post(serverURL + `/api/v1/task/${id}/update`, { 'title': newTitle, 'done': taskCompleted, 'id': id, 'assignee': assignee })
+        axios.post(serverURL + `/api/task/${id}/update`, { 'title': newTitle, 'done': taskCompleted, 'id': id, 'assignee': assignee })
             .then(() => homePage(token, assignee))
             .catch((err) => console.error(err));
     });
