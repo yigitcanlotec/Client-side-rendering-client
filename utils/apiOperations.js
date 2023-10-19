@@ -38,22 +38,23 @@ async function deleteTask(id, token, assignee) {
 
 function markAsDoneOrUndoneTask(token, id, done, assignee) {
     if (done) {
-        axios.post(serverURL + `api/task/${id}/done`, { id: id, assignee: assignee }, {
+        console.log((serverURL + `/api/task/${id}/done`));
+        axios.post((serverURL + `/api/task/${id}/done`), { id: id, assignee: assignee }, {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
         }).then(() => {
-            filter(token, 'all');
+            filterTasks(token, 'all');
         }).catch((err) => {
             console.error(err);
         });
     } else {
-        axios.post(serverURL + `/api/task/${id}/undone`, { id: id, assignee: assignee }, {
+        axios.post((serverURL + `/api/task/${id}/undone`), { id: id, assignee: assignee }, {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
         }).then(() => {
-            filter(token, 'all');
+            filterTasks(token, 'all');
         }).catch((err) => {
             console.error(err);
         });
@@ -135,10 +136,13 @@ async function getImages(userCredentials, token) {
     if (result.data) {
 
         const imgID = Object.keys(result.data).map((element) => element.split('/')[1]);
-        // console.log(imgID);
-        imgID.forEach((element, index) => {
-            domCreateElement('img', { src: Object.values(result.data)[index], width: '50', height: '50' }).appendToLast(element);
+       
+       
+            imgID.forEach((element, index) => {
+                if (document.getElementsByClassName(element).length)
+                    domCreateElement('img', { src: Object.values(result.data)[index], width: '50', height: '50' }).appendToLast(element);
+            });
 
-        });
+       
     }
 }

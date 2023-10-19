@@ -1,4 +1,4 @@
-const serverURL = 'http://localhost:3000'
+const serverURL = 'http://13.51.159.109:3000'
 mainPage();
 
 
@@ -79,6 +79,7 @@ function deleteAndCreateTableToQueryResult(query) {
         markButton.value = `Mark as ${!item.done}`;
         markButton.id = 'mark';
         markButton.addEventListener('click', async () => {
+            console.log('mark:' + item.id);
             markAsDoneOrUndoneTask(localStorage.getItem('token'), item.id, !item.done, item.assignee);
         });
         cell6.appendChild(markButton); 
