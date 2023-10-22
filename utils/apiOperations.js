@@ -38,12 +38,14 @@ async function deleteTask(id, token, assignee) {
 
 function markAsDoneOrUndoneTask(token, id, done, assignee) {
     if (done) {
-        axios.post(serverURL + `api/task/${id}/done`, { id: id, assignee: assignee }, {
+      
+        axios.post(serverURL + `/api/task/${id}/done`, { id: id, assignee: assignee }, {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
         }).then(() => {
-            filter(token, 'all');
+            filterTasks(token, 'all').then(() =>getImages(id, token));
+            
         }).catch((err) => {
             console.error(err);
         });
@@ -53,7 +55,7 @@ function markAsDoneOrUndoneTask(token, id, done, assignee) {
                 'Authorization': `Bearer ${token}`
             }
         }).then(() => {
-            filter(token, 'all');
+            filterTasks(token, 'all').then(() =>getImages(id, token));
         }).catch((err) => {
             console.error(err);
         });
@@ -126,7 +128,7 @@ async function handleFileSelect(token, id, username) {
 }
 
 async function getImages(userCredentials, token) {
-    const result = await axios.get(serverURL + `/api/${userCredentials.data[0]}/tasks/image`, {
+    const result = await axios.get(serverURL + `/api/${userCredentials}/tasks/image`, {
         headers: {
             'Authorization': `Bearer ${token}`
         }
@@ -137,8 +139,8 @@ async function getImages(userCredentials, token) {
         const imgID = Object.keys(result.data).map((element) => element.split('/')[1]);
         // console.log(imgID);
         imgID.forEach((element, index) => {
+            // console.log(element);
             domCreateElement('img', { src: Object.values(result.data)[index], width: '50', height: '50' }).appendToLast(element);
-
         });
     }
 }

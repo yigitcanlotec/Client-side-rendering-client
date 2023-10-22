@@ -1,3 +1,4 @@
+
 const serverURL = 'http://localhost:3000'
 mainPage();
 
@@ -17,8 +18,10 @@ function domCreateElement(element, options) {
     }
     return {
         appendToLast: function appendToLast(parentElement) {
+            
             if (parentElement === 'body')
                 return document.body.appendChild(createdElement);
+            if (document.getElementsByClassName(parentElement)[0] === undefined) return;
             return document
                 .getElementsByClassName(parentElement)[0]
                 .appendChild(createdElement);
