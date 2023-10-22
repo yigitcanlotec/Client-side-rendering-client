@@ -1,5 +1,5 @@
 
-const serverURL = 'http://51.20.126.62'
+const serverURL = 'http://51.20.126.62:3000'
 mainPage();
 
 
