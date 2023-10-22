@@ -14,12 +14,29 @@ async function homePage(token) {
         src: 'https://sdk.amazonaws.com/js/aws-sdk-2.1475.0.min.js'
     }).appendToLast('body');
 
-    const tableData = await axios.get(serverURL + '/api/tasks/', {
-        headers: {
-            'Authorization': `Bearer ${token}`
-        }
-    });
+    // const tableData = await axios.get(serverURL + '/api/tasks/', {
+    //     headers: {
+    //         'Authorization': `Bearer ${token}`
+    //     }
+    // });
+    let tableData='';
+    axios.get(serverURL + '/api/tasks/', {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        })
+        .then((result)=> tableData = result)
+        .catch((error) => {
+            const oldBodyElement = document.body;
+            const parentElement = oldBodyElement.parentElement;
+            parentElement.removeChild(oldBodyElement);
+            const body = document.createElement('body');
+            parentElement.appendChild(body);
+            localStorage.removeItem('token');
+            return mainPage()
+        });
 
+        
     const userCredentials = await axios.get(serverURL + '/api/userInfo/', {
         headers: {
             'Authorization': `Bearer ${token}`
@@ -29,7 +46,7 @@ async function homePage(token) {
     domCreateElement('div', { className: 'nav-bar' }).appendToLast(
         'body'
     );
-    domCreateElement('input', { type: 'button', id: 'profile', value: tableData.data.username }).appendToLast('nav-bar');
+    domCreateElement('input', { type: 'button', id: 'profile', value: tableData.data.username  }).appendToLast('nav-bar');
 
 
 
