@@ -1,9 +1,21 @@
+
+
 async function homePage(token) {
     const oldBodyElement = document.body;
     const parentElement = oldBodyElement.parentElement;
     parentElement.removeChild(oldBodyElement);
     const body = document.createElement('body');
     parentElement.appendChild(body);
+
+    if (token === undefined){
+        localStorage.removeItem('token');
+        const oldBodyElement = document.body;
+        const parentElement = oldBodyElement.parentElement;
+        parentElement.removeChild(oldBodyElement);
+        const body = document.createElement('body');
+        parentElement.appendChild(body);
+        return mainPage() 
+    }
 
     domCreateElement('link', {
         rel: 'stylesheet',
@@ -14,22 +26,41 @@ async function homePage(token) {
         src: 'https://sdk.amazonaws.com/js/aws-sdk-2.1475.0.min.js'
     }).appendToLast('body');
 
-    const tableData = await axios.get(serverURL + '/api/tasks/', {
-        headers: {
-            'Authorization': `Bearer ${token}`
-        }
-    });
+    // const tableData = await axios.get(serverURL + '/api/tasks/', {
+    //     headers: {
+    //         'Authorization': `Bearer ${token}`
+    //     }
+    // });
+    let tableData='';
+    axios.get(serverURL + '/api/tasks/', {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        })
+        .then((result)=> {tableData = result})
+        .catch((error) => {
+            console.log(error);
+            const oldBodyElement = document.body;
+            const parentElement = oldBodyElement.parentElement;
+            parentElement.removeChild(oldBodyElement);
+            const body = document.createElement('body');
+            parentElement.appendChild(body);
+            localStorage.removeItem('token');
+            return mainPage()
+        });
 
+    
     const userCredentials = await axios.get(serverURL + '/api/userInfo/', {
         headers: {
             'Authorization': `Bearer ${token}`
         }
     });
 
+
     domCreateElement('div', { className: 'nav-bar' }).appendToLast(
         'body'
     );
-    domCreateElement('input', { type: 'button', id: 'profile', value: tableData.data.username }).appendToLast('nav-bar');
+    domCreateElement('input', { type: 'button', id: 'profile', value: tableData.data === undefined? '' : tableData.data.username  }).appendToLast('nav-bar');
 
 
 
@@ -90,9 +121,17 @@ async function homePage(token) {
         'table'
     );
 
-
+    if (!tableData){
+        localStorage.removeItem('token');
+        const oldBodyElement = document.body;
+        const parentElement = oldBodyElement.parentElement;
+        parentElement.removeChild(oldBodyElement);
+        const body = document.createElement('body');
+        parentElement.appendChild(body);
+        return mainPage() 
+    }
     deleteAndCreateTableToQueryResult(tableData);
-    getImages(userCredentials, token);
+    getImages(userCredentials.data[0], token);
     domCreateElement('div', { className: 'input-container' }).appendToLast('first-container');
     domCreateElement('div', { className: 'inputForm', id: 'inputForm' }).appendToLast('input-container');
     domCreateElement('input', { type: 'file', id: 'file-input', accept: 'image/png, image/jpeg', multiple: true }).appendToLast('inputForm');
@@ -106,7 +145,7 @@ async function homePage(token) {
         addTask(userId, document.getElementById('title-text').value, document.getElementById('done-check').checked, token);
         const fileInput = document.getElementById('file-input');
         if (fileInput.files.length) {
-            handleFileSelect(token, userId, userCredentials.data[0]).then((result) => getImages(userCredentials, token));
+            handleFileSelect(token, userId, userCredentials.data[0]).then((result) => getImages(userCredentials.data[0], token));
 
         }
     });
@@ -128,6 +167,7 @@ async function homePage(token) {
 
     document.getElementById('filter-button').addEventListener('click', () => {
         filterTasks(token, document.getElementById('select-done').value);
+        getImages(userCredentials.data[0], token)
     });
 
 }

@@ -38,8 +38,8 @@ async function deleteTask(id, token, assignee) {
 
 function markAsDoneOrUndoneTask(token, id, done, assignee) {
     if (done) {
-        console.log((serverURL + `/api/task/${id}/done`));
-        axios.post((serverURL + `/api/task/${id}/done`), { id: id, assignee: assignee }, {
+      
+        axios.post(serverURL + `/api/task/${id}/done`, { id: id, assignee: assignee }, {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
@@ -127,7 +127,7 @@ async function handleFileSelect(token, id, username) {
 }
 
 async function getImages(userCredentials, token) {
-    const result = await axios.get(serverURL + `/api/${userCredentials.data[0]}/tasks/image`, {
+    const result = await axios.get(serverURL + `/api/${userCredentials}/tasks/image`, {
         headers: {
             'Authorization': `Bearer ${token}`
         }
